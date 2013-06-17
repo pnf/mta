@@ -1,0 +1,22 @@
+*.class
+*.log
+
+# sbt specific
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+*~
+boffo*
+bingo*
+bleh
+
+# Scala-IDE specific
+.scala_dependencies.ensime*
+.idea*
+.ensime*
+.project
+.classpath
