@@ -25,3 +25,4 @@ APIKEY
 .ensime*
 .project
 .classpath
+db/*

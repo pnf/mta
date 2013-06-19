@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # input: static_trip_id, arrived, departed, stop_id, ...
 # static_trip_id deocded as
@@ -14,17 +14,21 @@
 # arrival and depart are in local time
 
 
-import os, sys, sys, time, csv, datetime, re
+import os, sys, sys, time, csv, datetime, re, pymongo
 from math import *
 
 tau = 900. 	# seconds
 rates = {}  	# "stop_id route_id" -> (rate, t, trip_id)
 done = {}       # keys for which we are done
 
+from pymongo import MongoClient
+client = MongoClient()
+db = client.mta
+sched = db.sched
+
 reader = csv.reader(sys.stdin)
 
 # We're counting on effective date being in decreasing order, arrival times in increasing order
-
 for row in reader:
     if len(row)<4:
         continue
@@ -33,10 +37,10 @@ for row in reader:
     if  not m:
         continue
     (_,eff_date,service_code,origin_time,route_id,direction) = m.groups()
-    key = stop_id + " " + route_id
+    key = stop_id + ":" + route_id + ":" + service_code
     if key in done:
         continue
-    dt = arrived
+    s_arrived = arrived
     m = re.match('(\d\d):(\d\d):(\d\d)',arrived)
     if not m:
         continue
@@ -58,4 +62,20 @@ for row in reader:
         rate = -1.0 / log(1.0 - 1.0/rate)
     # Scale to hourly
     rate = rate * 3600/tau
-    print "%d, %s, %s, %s, %d, %f" % (now, dt, route_id, stop_id, now-prev_arrived, rate)
+
+    sched.update({'now'			: now,
+                  'route_id'		: route_id,
+                  'stop_id'		: stop_id,
+                  'service_code'	: service_code},
+                  {'now' 		: now,
+                  's_arrived'		: s_arrived,
+                  'service_code'	: service_code,
+                  'route_id'		: route_id,
+                  'eff_date'		: eff_date,
+                  'stop_id'		: stop_id,
+                  'since'		: now-prev_arrived,
+                  'rate'		: rate,
+                  'tau'			: tau},
+                 upsert=True)
+
+    # print "%d, %s, %s, %s, %s, %d, %f" % (now, s_arrived, service_code, route_id, stop_id, now-prev_arrived, rate)

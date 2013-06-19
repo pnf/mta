@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+
+import os, sys, sys, time, csv, datetime, re, pymongo, string
+from pymongo import MongoClient
+client = MongoClient()
+args = sys.argv
+args.pop(0)
+db = args.pop(0)
+coll = args.pop(0)
+n_key = int(args.pop(0))
+fields = args
+
+coll = client[db][coll]
+
+types = []
+for i in range(len(fields)):
+    f = fields[i].strip()
+    if f[-2:]=='/f':
+        types.append(lambda x : float(x))
+        fields[i] = f[:-2]
+    elif f[-2:]=='/i':
+        types.append(lambda x : int(x))
+        fields[i] = f[:-2]
+    elif f[-2:]=='/l':
+        types.append(lambda x : long(x))
+        fields[i] = f[:-2]
+    else:
+        types.append(lambda x : str(x))
+        fields[i] = f
+
+reader = csv.reader(sys.stdin)
+for row in reader:
+    key = {}
+    record = {}
+    for (k,t,v,i) in zip(fields,types,row,range(len(fields))):
+        v = t(v.strip())
+        record[k] = v
+        if i<n_key:
+            key[k] = v
+    coll.update(key,record,upsert=True)

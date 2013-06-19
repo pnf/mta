@@ -1,6 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
-import os, sys, json, sys, time, csv, urllib2
+import os, sys, json, sys, time, csv, urllib2, pymongo
+
 
 sys.path.extend(['../protobuf-json-read-only','./pb'])
 
@@ -9,6 +10,11 @@ import protobuf_json
 import nyct_subway_pb2 as nyct
 import gtfs_realtime_pb2 as gtfs
 
+from pymongo import MongoClient
+client = MongoClient()
+db = client.mta
+etas = db.etas
+meta = db.meta
 
 stop2name = {}
 with open('static/stops.txt') as f:
@@ -51,8 +57,22 @@ while True:
                     ta = long(a.arrival.time)
                     wait = ta-now
                     print "%d, %s, %s, %s, %d, %d, %s" % (now, trip_id, route_id, stop_id, ta, ta-now, stop2name[stop_id])
+                    
+                    etas.update({'now' : now,
+                                 'trip_id' : trip_id,
+                                 'route_id' : route_id,
+                                 'stop_id' : stop_id},
+                                {'now' : now,
+                                 'trip_id' : trip_id,
+                                 'route_id' : route_id,
+                                 'stop_id' : stop_id,
+                                 'eta' : ta,
+                                 'wait' : ta-now},
+                                upsert=True)
                     if wait>0:
                         break
+
+        meta.update({'meta':'snag'},{'meta':'snag', 'lastsnag':now}, upsert=True)
                     
 
     except Exception as e:
