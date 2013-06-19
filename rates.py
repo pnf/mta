@@ -11,7 +11,7 @@ from math import *
 tau = 900. 	# seconds
 adj = 1.0 - exp(-1.0)
 rates = {}  	# "stop_id route_id" -> (rate, t, trip_id, t_pred)
-arrived = {}	# "stop_id trip_id" -> True
+arrived = {}	# "stop_id trip_id date" -> True
 
 reader = csv.reader(sys.stdin)
 
@@ -23,8 +23,16 @@ for row in reader:
     eta = long(eta)
     if eta<now-2*tau:  # An eta far in the past is suspicious
         continue
+    route_id = route_id.strip()
+    stop_id = stop_id.strip()
+    trip_id = trip_id.strip()
+
+    # Look out for bogus trip ids
+    if not re.match("^\d{6}_\S{3}[SN]\d\d\w+",trip_id):
+        continue
+
     key = route_id + ':' + stop_id
-    key2 = key + ':' + trip_id
+    key2 = key + ':' + trip_id + ':' + datetime.datetime.fromtimestamp(now).strftime('%Y%m%d')
     if key2 in arrived:
         continue
 
