@@ -14,8 +14,10 @@ boffo*
 bingo*
 bleh
 *.bak
+*.csv
 
 APIKEY
+
 
 # Scala-IDE specific
 .scala_dependencies.ensime*

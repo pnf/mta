@@ -45,10 +45,14 @@ while True:
                 tu = e.trip_update
                 trip_id = tu.trip.trip_id
                 route_id = tu.trip.route_id
+                # These come in order.  Keep only the first estimate that's in the future.
                 for a in tu.stop_time_update:
                     stop_id = a.stop_id
                     ta = long(a.arrival.time)
+                    wait = ta-now
                     print "%d, %s, %s, %s, %d, %d, %s" % (now, trip_id, route_id, stop_id, ta, ta-now, stop2name[stop_id])
+                    if wait>0:
+                        break
                     
 
     except Exception as e:
