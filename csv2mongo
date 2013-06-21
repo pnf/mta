@@ -3,17 +3,34 @@
 
 import os, sys, sys, time, csv, datetime, re, pymongo, string
 from pymongo import MongoClient
-client = MongoClient()
+
 args = sys.argv
 args.pop(0)
 db = args.pop(0)
 coll = args.pop(0)
-n_key = int(args.pop(0))
+n_key = int(args.pop(0)) if len(args)>0 else 0
 fields = args
+
+port=3333
+host='localhost'
+m = re.match('(\w+):(\w+):(\w+)',db)
+if m:
+    (host,port,db) = m.groups()
+    port = int(port)
+client = MongoClient(host,port)
 
 coll = client[db][coll]
 
 types = []
+
+reader = csv.reader(sys.stdin)
+
+# If there's a header, this is a complete load from scratch
+if len(fields)==0:
+    fields = reader.next()
+    coll.remove()
+    print "Fields:", fields
+
 for i in range(len(fields)):
     f = fields[i].strip()
     if f[-2:]=='/f':
@@ -29,7 +46,9 @@ for i in range(len(fields)):
         types.append(lambda x : str(x))
         fields[i] = f
 
-reader = csv.reader(sys.stdin)
+batch=[]
+n_batch=100
+n=0
 for row in reader:
     key = {}
     record = {}
@@ -38,4 +57,17 @@ for row in reader:
         record[k] = v
         if i<n_key:
             key[k] = v
-    coll.update(key,record,upsert=True)
+    if n_key>0:
+        coll.update(key,record,upsert=True)
+    else: 
+        batch.append(record)
+        if len(batch)>n_batch:
+            coll.insert(batch)
+            n = n+len(batch)
+            batch = []
+            print >> sys.stderr,"Inserted",n,"records"
+
+if len(batch)>0:
+    n = n+len(batch)
+    coll.insert(batch)
+    print >> sys.stderr,"Inserted",n,"records"

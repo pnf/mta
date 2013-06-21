@@ -3,27 +3,41 @@
 #usage:  db collection arg1:v1 arg2:v2 ... arga argb
 
 
-import os, sys, sys, time, csv, datetime, re, pymongo, string
+import os, sys, sys, time, csv, datetime, re, pymongo, string, json
 from pymongo import MongoClient
-client = MongoClient()
 
 args = sys.argv
 
 args.pop(0)
 db = args.pop(0)
+
+port=3333
+host='localhost'
+m = re.match('(\w+):(\w+):(\w+)',db)
+if m:
+    (host,port,db) = m.groups()
+    port = int(port)
+client = MongoClient(host,port)
+
+
 coll = args.pop(0)
 coll = client[db][coll]
+
 
 query = {}
 cols = []
 
 for a in args:
-    m = re.match('(\w+):(\w+)', a)
+    m = re.match('(\w+):(.*)', a)
     if m:
        (k,v) = m.groups()
+       if v[0]=='{':
+              v = json.loads(v)       
        query[k] = v
     else:
 	cols.append(a)
+
+print >>sys.stderr,query,cols
 
 for row in coll.find(query):
     row = [str(row[c]) for c in cols]

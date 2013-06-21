@@ -1,6 +1,17 @@
 mta
 ===
 
+Static data lives here
+
+
+     http://www.mta.info/developers/data/nyct/subway/google_transit.zip
+
+
+Dynamic data
+
+
+
+
 Basic format of the protobuf is:
 
 

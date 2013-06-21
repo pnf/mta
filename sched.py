@@ -22,11 +22,18 @@ rates = {}  	# "stop_id route_id" -> (rate, t, trip_id)
 done = {}       # keys for which we are done
 
 from pymongo import MongoClient
-client = MongoClient()
+client = MongoClient('localhost',3333)
 db = client.mta
 sched = db.sched
 
+# empty
+sched.remove()
+
 reader = csv.reader(sys.stdin)
+
+n_bulk = 100
+batch = []
+n = 0
 
 # We're counting on effective date being in decreasing order, arrival times in increasing order
 for row in reader:
@@ -63,19 +70,39 @@ for row in reader:
     # Scale to hourly
     rate = rate * 3600/tau
 
-    sched.update({'now'			: now,
-                  'route_id'		: route_id,
-                  'stop_id'		: stop_id,
-                  'service_code'	: service_code},
-                  {'now' 		: now,
-                  's_arrived'		: s_arrived,
-                  'service_code'	: service_code,
-                  'route_id'		: route_id,
-                  'eff_date'		: eff_date,
-                  'stop_id'		: stop_id,
-                  'since'		: now-prev_arrived,
-                  'rate'		: rate,
-                  'tau'			: tau},
-                 upsert=True)
+    batch.append({'now' 		: now,
+                      't_day'		: now,
+                      's_arrived'		: s_arrived,
+                      'service_code'	: service_code,
+                      'route_id'		: route_id,
+                      'eff_date'		: eff_date,
+                      'stop_id'		: stop_id,
+                      'since'		: now-prev_arrived,
+                      'rate'		: rate,
+                      'tau'			: tau})
+    if len(batch)>n_bulk:
+        sched.insert(batch)
+        n = n + len(batch)
+        batch = []
+        print >> sys.stderr,"Inserted",n,"records"
+        
+if len(batch)>0:
+    sched.insert(batch)
+
+
+    # sched.update({'now'			: now,
+    #               'route_id'		: route_id,
+    #               'stop_id'		: stop_id,
+    #               'service_code'	: service_code},
+    #               {'now' 		: now,
+    #               's_arrived'		: s_arrived,
+    #               'service_code'	: service_code,
+    #               'route_id'		: route_id,
+    #               'eff_date'		: eff_date,
+    #               'stop_id'		: stop_id,
+    #               'since'		: now-prev_arrived,
+    #               'rate'		: rate,
+    #               'tau'			: tau},
+    #              upsert=True)
 
     # print "%d, %s, %s, %s, %s, %d, %f" % (now, s_arrived, service_code, route_id, stop_id, now-prev_arrived, rate)
