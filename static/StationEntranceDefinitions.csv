@@ -1,0 +1,44 @@
+FIELD NAME,DEFINITION,EXAMPLE
+Division,"Specifies which division the station belongs to; either BMT, IND or IRT",BMT
+Station_Name,Name of the station as shown on subway handout map,14 St-Union Sq
+Route_1,"First route that serves the station (or complex, if applicable) during weekday service as of June 1, 2011; note that the 42 St Shuttle is 'GS', Franklin Shuttle is 'FS', and Rockaway Shuttle is 'H'",L
+Route_2,"Second route serving the station (or complex, if applicable) during weekday service",N
+Route_3,"Third route serving the station (or complex, if applicable) during weekday service",Q
+Route_4,"Fourth route serving the station (or complex, if applicable) during weekday service",R
+Route_5,"Fifth route serving the station (or complex, if applicable) during weekday service",4
+Route_6,"Sixth route serving the station (or complex, if applicable) during weekday service",5
+Route_7,"Seventh route serving the station (or complex, if applicable) during weekday service",6
+Route_8,"Eighth route serving the station (or complex, if applicable) during weekday service",
+Route_9,"Ninth route serving the station (or complex, if applicable) during weekday service",
+Route_10,"Tenth route serving the station (or complex, if applicable) during weekday service",
+Route_11,"Eleventh route serving the station (or complex, if applicable) during weekday service",
+ADA,If a station is ADA accessible value is TRUE; however note this does not indicate that the actual entrance is ADA accessible,TRUE
+ADA_Notes,"Any special circumstances regarding ADA accessibility at this station (or complex, if applicable)",Lex not ADA
+Free_Crossover,"If a passenger can switch route directions without exiting and paying another fare at this station (note this is station level information, not entrance level)",TRUE
+Entrance_Type,"Describes the physical entry way indicated by the coordinates and is usually one of the following: Door or Doorway, Stair, Escalator, Elevator, Ramp or Easement (which only specifies that the entrance is within other property and does not indicate if it is a stair, etc)",Stair
+Entry,Indicates whether this 'Entrance' has turnstiles that allow entry (as opposed to exit only - see below),YES
+Exit_Only,Indicates if this 'Entrance' is actually an exit only location and prohibits entry,
+Entrance_Staffing,"Indicates the current level of staffing that is available at this entrance; FULL indicates a booth agent is available 24/7, NONE means the area is not staffed, and PART indicates that an agent is on duty at certain times but not 24/7",FULL
+North_South_Street,Primary vertical street adjacent to station entrance for wayfinding purposes,Broadway
+East_West_Street,Primary horizontal street adjacent to station entrance for wayfinding purposes,14th St
+Corner,Directional corner from the intersection of the vertical and horizontal streets,NE
+Latitude,Latitude degree,40735278
+Longitude,Longitude degree,-73991058
+,,
+,,
+Notes on data release June 2011,,
+Service (route) information is updated.,,
+Entrances are updated for various stations.,,
+Station names are exactly the same as represented on the subway handout map.,,
+Complex stations have all routes serving the complex listed.,,
+ADA stations are updated.,,
+Entry and Exit Only data is simplified.,,
+Free Crossover and Entrance Staffing are introduced.,,
+,,
+Warnings and Disclaimers,,
+These entrances are represented as accurately as possible but mistakes or errors may be found.  Some of the ,,
+fields may change post release of this information; efforts will be made to update when necessary.,,
+Some other fields may contain information that changes due to a situation not present or obvious ,,
+at time of data release (such as an elevator or escalator being out of service; an entrance closed for temporary,,
+"or permanent reason, staffing is reduced at a station, etc.).  Please call New York City Transit at 718-330-1234",,
+prior to your trip if you need further assistance or visit mta.info,,
