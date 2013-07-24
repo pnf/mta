@@ -56,8 +56,8 @@ class RateCalc:
         if not re.match("^\d{6}_\S{3}[SN]\d\d\w+",trip_id):
             return
 
-        key = route_id + ':' + stop_id
-        key2 = key + ':' + trip_id + ':' + datetime.datetime.fromtimestamp(now).strftime('%Y%m%d')
+        key = (route_id, stop_id)
+        key2 = (key,trip_id, datetime.datetime.fromtimestamp(now).strftime('%Y%m%d'))
         if key2 in this.arrived:
             return
         t_arrived=0

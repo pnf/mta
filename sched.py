@@ -31,20 +31,24 @@ sched.remove()
 
 reader = csv.reader(sys.stdin)
 
-n_bulk = 100
+# For loading the main sched collection
+n_bulk = 1000
 batch = []
 n = 0
+
+# (stop_id, route_id) => seq
+seqs = {}
 
 # We're counting on effective date being in decreasing order, arrival times in increasing order
 for row in reader:
     if len(row)<4:
         continue
-    (trip_id, arrived, departed, stop_id) = row[:4]
+    (trip_id, arrived, departed, stop_id,stop_sequence) = row[:5]
     m = re.match('([AB])(\d{8})(\w{3})_(\d{6})_(\w+)\.*([NS]).*', trip_id)
     if  not m:
         continue
     (_,eff_date,service_code,origin_time,route_id,direction) = m.groups()
-    key = stop_id + ":" + route_id + ":" + service_code
+    key = (stop_id, route_id,service_code)
     if key in done:
         continue
     s_arrived = arrived
@@ -85,10 +89,31 @@ for row in reader:
         n = n + len(batch)
         batch = []
         print >> sys.stderr,"Inserted",n,"records"
+
+    combo = (stop_id, route_id, direction)
+    if not combo in seqs:
+        seqs[combo] = stop_sequence
         
 if len(batch)>0:
     sched.insert(batch)
+    pass
 
+route2stop = {}
+batch = []
+for stop_id, route_id, direction in seqs.keys():
+    route2stop[(route_id,direction)] = []
+for stop_id, route_id, direction in seqs.keys():
+    stop_sequence = seqs[(stop_id,route_id,direction)]
+    route2stop[(route_id,direction)].append((stop_id,stop_sequence))
+for route_id, direction in route2stop.keys():
+    stops = route2stop[(route_id,direction)]
+#    stops.sort(cmp=lambda a,b: int(a[1])-int(b[1]))
+    stops.sort(key=lambda x: x[1])
+    batch.append({'route_id':route_id,
+                  'direction':direction,
+                  'stops':[x[0] for x in stops]})
+db.routestops.remove()
+db.routestops.insert(batch)
 
     # sched.update({'now'			: now,
     #               'route_id'		: route_id,
