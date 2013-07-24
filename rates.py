@@ -7,7 +7,6 @@ import os, sys, sys, time, csv, datetime, re, pymongo
 from pymongo import MongoClient
 from math import *
 
-
 class RateCalc:
     def __init__(this,hostname='localhost',port=3333,tau=900.):
         this.client = MongoClient(hostname,port)
@@ -22,7 +21,7 @@ class RateCalc:
         this.n=0
         this.batch = []
 
-    def write(this,row):
+    def write(this,row=None):
         if row is not None:
             this.batch.append(row)
         if row is None or len(this.batch)>this.n_batch:
@@ -32,6 +31,9 @@ class RateCalc:
             this.batch = []
 
     def catchup(this,extra=0):
+        this.process_stream(this.catchup_iter())
+
+    def catchup_iter(this, extra=0):
         lastcalc = this.ratedb.find().sort([('now',pymongo.DESCENDING)]).limit(1)
         lastcalc = lastcalc[0]['now'] if lastcalc.count()>0 else 0
         lastcalc = lastcalc - extra
@@ -41,8 +43,13 @@ class RateCalc:
         print >> sys.stderr, "rates: catching up.  now=",long(time.time())," lastcalc=",lastcalc,"warmup=",warmup
         for row in this.etas.find({'now' : {'$gte' : warmup}},sort=[('now',pymongo.ASCENDING)]):
             (now, trip_id, route_id, stop_id, eta, dt) = [row[x] for x in ('now','trip_id','route_id','stop_id','eta','wait')]
-            this.process(now, trip_id, route_id, stop_id, eta, dt,now>=lastcalc)
-        this.write(None)
+            yield        (now, trip_id, route_id, stop_id, eta, dt, now>=lastcalc)
+            #this.process(now, trip_id, route_id, stop_id, eta, dt, now>=lastcalc)
+
+    def process_stream(this, etas):
+        for now, trip_id, route_id, stop_id, eta, dt, do_write in etas:
+            this.process(now, trip_id, route_id, stop_id, eta, dt, do_write)
+        this.write()
 
     def process(this,now, trip_id, route_id, stop_id, eta, dt,do_write=True):
         now = long(now)
