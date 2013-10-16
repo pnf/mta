@@ -54,3 +54,11 @@ gnuplot> plot '< ./mongo2csv localhost:33333:mta sched route_id:1 stop_id:132S s
 
 using a utility to extract mongo data into column format.
 
+---
+
+Indexes in mongo:
+
+~~~
+db.rates.ensureIndex({day : 1, stop_id : 1, route_id : 1}, {background : true} )
+db.sched.ensureIndex({route_id : 1,  service_code : 1, stop_id: 1})
+~~~
