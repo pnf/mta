@@ -55,7 +55,7 @@ while True:
                 tu = e.trip_update
                 trip_id = tu.trip.trip_id
                 route_id = tu.trip.route_id
-                # These come in order.  Keep only the first estimate that's in the future.
+                # These come in order.  Keep only the next half hour of estimates
                 for a in tu.stop_time_update:
                     stop_id = a.stop_id
                     ta = long(a.arrival.time)
@@ -69,7 +69,7 @@ while True:
                                  'eta' : ta,
                                  'wait' : ta-now})
                     r.process(now,trip_id,route_id,stop_id,ta,wait)
-                    if wait>0:
+                    if wait > 3600:
                         break
 
         if len(batch)>0:
