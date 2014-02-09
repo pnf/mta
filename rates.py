@@ -22,8 +22,6 @@ class RateCalc:
         this.batch = []
 
     def write(this,row=None):
-        if len(this.batch)==0:
-            return
         if row is not None:
             this.batch.append(row)
         if row is None or len(this.batch)>this.n_batch:
