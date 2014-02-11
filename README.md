@@ -54,11 +54,49 @@ gnuplot> plot '< ./mongo2csv localhost:33333:mta sched route_id:1 stop_id:132S s
 
 using a utility to extract mongo data into column format.
 
+Notes
 ---
 
-Indexes in mongo:
+You'll need protobufs:
+https://protobuf.googlecode.com/files/protobuf-2.5.0.tar.gz
+gzcat | tar -xf -
+cd protobuf-2.5.0
+./configure
+make
+cd python
+python setup.py build
+
+../protobuf-2.5.0/src/protoc -I./pb --python_out=./pb pb/nyct-subway.proto
+
+svn checkout http://protobuf-json.googlecode.com/svn/trunk/ protobuf-json-read-only
+In here: ln -s ../protobuf-2.5.0/python/google
+
+Probably want to run this in a virtualenv.
+pip install 
+
+
+
+You need a mongo v 2.4 or above
+Starting up mongod:
+mongod -dbpath . -port 3333 --verbose
+
+Create a db called mta, and in it:
 
 ~~~
+db.createCollection('sched')
+db.createCollection('rates')
 db.rates.ensureIndex({day : 1, stop_id : 1, route_id : 1}, {background : true} )
 db.sched.ensureIndex({route_id : 1,  service_code : 1, stop_id: 1})
+db.etas.ensureIndex({now : 1}, {background : true} )
+
 ~~~
+
+Populate static data:
+
+~~~
+
+./sched.py < static/stop_times.txt
+ ./csv2mongo mta stops < static/stops.txt
+
+~~~
+
