@@ -3,7 +3,7 @@
 import os, sys, json, sys, time, csv, urllib2, pymongo
 from rates import RateCalc
 
-DRYRUN = True
+DRYRUN = False
 
 sys.path.extend(['../protobuf-json-read-only','./pb'])
 
