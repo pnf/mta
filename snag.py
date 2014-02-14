@@ -3,7 +3,7 @@
 import os, sys, json, sys, time, csv, urllib2, pymongo
 from rates import RateCalc
 
-DRYRUN = False
+DRYRUN = os.environ.get('DRYRUN',False)
 
 sys.path.extend(['../protobuf-json-read-only','./pb'])
 
@@ -50,8 +50,6 @@ while True:
         now = long(time.time())
         
         print >> sys.stderr, "snag: polling at",now
-        if not DRYRUN:
-            etas.remove({'now':now})
 
         batch=[]
 
@@ -79,16 +77,18 @@ while True:
             for a in tu.stop_time_update:
                     stop_id = a.stop_id
                     ta = long(a.arrival.time)
-                    wait = ta-now
-                    print "%d, %s, %s, %s, %d, %d, %s" % (timestamp, trip_id, route_id, stop_id, ta, ta-now, stop2name[stop_id])
+                    wait = ta-timestamp
+                    print "%d, %d, %s, %s, %s, %d, %d, %s" % (now,timestamp, trip_id, route_id, stop_id, ta, ta-now, stop2name[stop_id])
 
                     if not DRYRUN:
-                        batch.append({'now' : timestamp,
-                                 'trip_id' : trip_id,
-                                 'route_id' : route_id,
-                                 'stop_id' : stop_id,
-                                 'eta' : ta,
-                                 'wait' : ta-now})
+                        batch.append({
+                            'snagged' : now,
+                            'now' : timestamp,
+                            'trip_id' : trip_id,
+                            'route_id' : route_id,
+                            'stop_id' : stop_id,
+                            'eta' : ta,
+                            'wait' : ta-timestamp,})
                         r.process(now,trip_id,route_id,stop_id,ta,wait)
 
                     if wait > 3600:
