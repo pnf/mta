@@ -60,18 +60,17 @@ def accrue_rate(stop_id, route_id,service_code, arrived):
                 if prev_arrived > now:
                     done[key] = True
                     return Null
-                    rate = rate*exp(-(arrived-prev_arrived)/tau) + 1.0
-                else:
-                    rate = 1.0
-                    prev_arrived = now
-                    rates[key] = (rate,arrived, trip_id, arrived)
-                    # Correct for discreteness
-                    if rate>1.0:
-                        rate = -1.0 / log(1.0 - 1.0/rate)
-                        # Scale to hourly
-                        rate = rate * 3600/tau
+                rate = rate*exp(-(arrived-prev_arrived)/tau) + 1.0
+            else:
+                rate = 1.0
+                prev_arrived = now
+            rates[key] = (rate,arrived, trip_id, arrived)
+            # Correct for discreteness
+            if rate>1.0:
+                rate = -1.0 / log(1.0 - 1.0/rate)
+                # Scale to hourly
+                rate = rate * 3600/tau
         return rate
-                
 
 
 # We're counting on effective date being in decreasing order, arrival times in increasing order
