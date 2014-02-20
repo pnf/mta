@@ -22,7 +22,9 @@ rates = {}  	# "stop_id route_id" -> (rate, t, trip_id)
 done = {}       # keys for which we are done
 
 from pymongo import MongoClient
-client = MongoClient('localhost',3333)
+port = os.environ.get('MONGO_PORT',3333)
+host = os.environ.get('MONGO_HOST','localhost')
+client = MongoClient(host,port)
 db = client.mta
 sched = db.sched
 
@@ -39,51 +41,77 @@ n = 0
 # (stop_id, route_id) => seq
 seqs = {}
 
+
+def accrue_rate(stop_id, route_id,service_code, arrived):
+
+    key  = (stop_id, route_id,service_code)
+
+    if key in done:
+        return Null
+    else:
+        s_arrived = arrived
+        m = re.match('(\d\d):(\d\d):(\d\d)',arrived)
+        if m:
+            (hour,minute,second) = [int(x) for x in m.groups()]
+            arrived = hour*3600 + minute*60 + second
+            now = arrived
+            if key in rates:
+                (rate, t, prev_trip_id, prev_arrived) = rates[key]
+                if prev_arrived > now:
+                    done[key] = True
+                    return Null
+                    rate = rate*exp(-(arrived-prev_arrived)/tau) + 1.0
+                else:
+                    rate = 1.0
+                    prev_arrived = now
+                    rates[key] = (rate,arrived, trip_id, arrived)
+                    # Correct for discreteness
+                    if rate>1.0:
+                        rate = -1.0 / log(1.0 - 1.0/rate)
+                        # Scale to hourly
+                        rate = rate * 3600/tau
+        return rate
+                
+
+
 # We're counting on effective date being in decreasing order, arrival times in increasing order
+# We'll keep two sets of rates, one for platform and one for platform + route
 for row in reader:
     if len(row)<4:
         continue
     (trip_id, arrived, departed, stop_id,stop_sequence) = row[:5]
     m = re.match('([AB])(\d{8})(\w{3})_(\d{6})_(\w+)\.*([NS]).*', trip_id)
-    if  not m:
-        continue
-    (_,eff_date,service_code,origin_time,route_id,direction) = m.groups()
-    key = (stop_id, route_id,service_code)
-    if key in done:
-        continue
-    s_arrived = arrived
-    m = re.match('(\d\d):(\d\d):(\d\d)',arrived)
     if not m:
         continue
-    (hour,minute,second) = [int(x) for x in m.groups()]
-    arrived = hour*3600 + minute*60 + second
-    now = arrived
-    if key in rates:
-        (rate, t, prev_trip_id, prev_arrived) = rates[key]
-        if prev_arrived > now:
-            done[key] = True
-            continue
-        rate = rate*exp(-(arrived-prev_arrived)/tau) + 1.0
-    else:
-        rate = 1.0
-        prev_arrived = now
-    rates[key] = (rate,arrived, trip_id, arrived)
-    # Correct for discreteness
-    if rate>1.0:
-        rate = -1.0 / log(1.0 - 1.0/rate)
-    # Scale to hourly
-    rate = rate * 3600/tau
 
-    batch.append({'now' 		: now,
-                      't_day'		: now,
-                      's_arrived'		: s_arrived,
-                      'service_code'	: service_code,
-                      'route_id'		: route_id,
-                      'eff_date'		: eff_date,
-                      'stop_id'		: stop_id,
-                      'since'		: now-prev_arrived,
-                      'rate'		: rate,
-                      'tau'			: tau})
+    (_,eff_date,service_code,origin_time,route_id,direction) = m.groups()
+
+    rate = accrue_rate(stop_id,route_id,service_code,arrived)
+    if rate:
+            batch.append({'now' 		: now,
+                  't_day'		: now,
+                  's_arrived'		: s_arrived,
+                  'service_code'	: service_code,
+                  'route_id'		: route_id,
+                  'eff_date'		: eff_date,
+                  'stop_id'		: stop_id,
+                  'since'		: now-prev_arrived,
+                  'rate'		: rate,
+                  'tau'			: tau})
+
+    rate = accrue_rate(stop_id,'*',service_code,arrived)
+    if rate:
+            batch.append({'now' 		: now,
+                  't_day'		: now,
+                  's_arrived'		: s_arrived,
+                  'service_code'	: service_code,
+                  'route_id'		: '*',
+                  'eff_date'		: eff_date,
+                  'stop_id'		: stop_id,
+                  'since'		: now-prev_arrived,
+                  'rate'		: rate,
+                  'tau'			: tau})
+
     if len(batch)>n_bulk:
         sched.insert(batch)
         n = n + len(batch)
