@@ -49,6 +49,7 @@ class RateCalc:
     def process_stream(this, etas):
         for now, trip_id, route_id, stop_id, eta, dt, do_write in etas:
             this.process(now, trip_id, route_id, stop_id, eta, dt, do_write)
+            this.process(now, trip_id, '*', stop_id, eta, dt, do_write)
         this.write()
 
     def process(this,now, trip_id, route_id, stop_id, eta, dt,do_write=True):

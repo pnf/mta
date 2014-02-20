@@ -22,7 +22,7 @@ rates = {}  	# "stop_id route_id" -> (rate, t, trip_id)
 done = {}       # keys for which we are done
 
 from pymongo import MongoClient
-port = os.environ.get('MONGO_PORT',3333)
+port = int(os.environ.get('MONGO_PORT',3333))
 host = os.environ.get('MONGO_HOST','localhost')
 client = MongoClient(host,port)
 db = client.mta
@@ -43,15 +43,16 @@ seqs = {}
 
 
 def accrue_rate(stop_id, route_id,service_code, arrived):
-
     key  = (stop_id, route_id,service_code)
 
     if key in done:
-        return Null
+        return (None,None,None)
     else:
         s_arrived = arrived
         m = re.match('(\d\d):(\d\d):(\d\d)',arrived)
-        if m:
+        if not m:
+            return (None,None,None)
+        else:
             (hour,minute,second) = [int(x) for x in m.groups()]
             arrived = hour*3600 + minute*60 + second
             now = arrived
@@ -59,7 +60,7 @@ def accrue_rate(stop_id, route_id,service_code, arrived):
                 (rate, t, prev_trip_id, prev_arrived) = rates[key]
                 if prev_arrived > now:
                     done[key] = True
-                    return Null
+                    return (None,None,None)
                 rate = rate*exp(-(arrived-prev_arrived)/tau) + 1.0
             else:
                 rate = 1.0
@@ -70,7 +71,7 @@ def accrue_rate(stop_id, route_id,service_code, arrived):
                 rate = -1.0 / log(1.0 - 1.0/rate)
                 # Scale to hourly
                 rate = rate * 3600/tau
-        return rate
+            return (rate,now,prev_arrived)
 
 
 # We're counting on effective date being in decreasing order, arrival times in increasing order
@@ -85,11 +86,11 @@ for row in reader:
 
     (_,eff_date,service_code,origin_time,route_id,direction) = m.groups()
 
-    rate = accrue_rate(stop_id,route_id,service_code,arrived)
+    (rate,now,prev_arrived) = accrue_rate(stop_id,route_id,service_code,arrived)
     if rate:
             batch.append({'now' 		: now,
                   't_day'		: now,
-                  's_arrived'		: s_arrived,
+                  's_arrived'		: arrived,
                   'service_code'	: service_code,
                   'route_id'		: route_id,
                   'eff_date'		: eff_date,
@@ -98,11 +99,11 @@ for row in reader:
                   'rate'		: rate,
                   'tau'			: tau})
 
-    rate = accrue_rate(stop_id,'*',service_code,arrived)
+    (rate,now,prev_arrived) = accrue_rate(stop_id,'*',service_code,arrived)
     if rate:
             batch.append({'now' 		: now,
                   't_day'		: now,
-                  's_arrived'		: s_arrived,
+                  's_arrived'		: arrived,
                   'service_code'	: service_code,
                   'route_id'		: '*',
                   'eff_date'		: eff_date,
