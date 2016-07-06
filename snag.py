@@ -3,7 +3,7 @@
 import os, sys, json, sys, time, csv, urllib2, pymongo
 from rates import RateCalc
 
-sys.path.extend(['../protobuf-json-read-only','./pb'])
+sys.path.extend(['./protobuf-json','./pb'])
 
 import protobuf_json
 
