@@ -57,22 +57,23 @@ using a utility to extract mongo data into column format.
 Notes
 ---
 
-You'll need protobufs:
-https://protobuf.googlecode.com/files/protobuf-2.5.0.tar.gz
-gzcat | tar -xf -
-cd protobuf-2.5.0
+
+protobuf and protobuf-json are submodules.  To build the protobuf python:
+
+~~~
+cd protobuf
+./autogen.sh
 ./configure
 make
 cd python
-python setup.py build
+./setup.py install  # a virtualenv might be nice
 
-../protobuf-2.5.0/src/protoc -I./pb --python_out=./pb pb/nyct-subway.proto
+cd ../../protobuf-json
+ln -s ../protobuf/python/google
 
-svn checkout http://protobuf-json.googlecode.com/svn/trunk/ protobuf-json-read-only
-In here: ln -s ../protobuf-2.5.0/python/google
-
-Probably want to run this in a virtualenv.
-pip install 
+cd ..
+./protobuf/src/protoc -I./pb --python_out=./pb pb/nyct-subway.proto
+~~~
 
 
 

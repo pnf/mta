@@ -1,5 +1,6 @@
 *.class
 *.log
+*.pyc
 
 # sbt specific
 dist/*
@@ -18,11 +19,3 @@ bleh
 
 APIKEY
 
-
-# Scala-IDE specific
-.scala_dependencies.ensime*
-.idea*
-.ensime*
-.project
-.classpath
-db/*
